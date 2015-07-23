@@ -9,7 +9,7 @@ import (
 
 //GetIndex ...
 func GetIndex(w http.ResponseWriter, r *http.Request) {
-	fp, err := filepath.Abs("static/index.html")
+	fp, err := filepath.Abs("public/index.html")
 	utils.PanicOnError(err)
 
 	http.ServeFile(w, r, fp)

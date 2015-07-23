@@ -12,9 +12,10 @@ import (
 //Convert ...
 func Convert(w http.ResponseWriter, r *http.Request) {
 	file, _, err := r.FormFile("file")
+	utils.PanicOnError(err)
 
 	table := app.ImageToTable(file)
-	fp, err := filepath.Abs("templates/table.html")
+	fp, err := filepath.Abs("public/templates/table.html")
 	utils.PanicOnError(err)
 
 	t, err := template.ParseFiles(fp)

@@ -1,0 +1,24 @@
+<html>
+  <head>
+    <title>Go - Image to Table</title>
+    <style>
+      table {
+        border-spacing: 0;
+        border-collapse: collapse;
+      }
+      table tr {
+        padding: 0;
+        height: 1px;
+      }
+      table tr td {
+        width: 1px;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <table width="{{.Width}}" height="{{.Height}}">
+      {{.Rows}}
+    </table>
+  </body>
+</html>
