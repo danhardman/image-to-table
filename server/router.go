@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -21,4 +22,5 @@ func Router() {
 	http.Handle("/static/", http.FileServer(http.Dir("public/static")))
 
 	log.Fatal(http.ListenAndServe(":"+port, r))
+	fmt.Println("Listening to port: " + port)
 }
