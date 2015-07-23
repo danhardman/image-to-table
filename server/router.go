@@ -19,7 +19,9 @@ func Router() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", GetIndex).Methods("GET")
 	r.HandleFunc("/Convert", Convert).Methods("POST")
-	r.PathPrefix("/static").Handler(http.FileServer(http.Dir("./public/static/")))
+
+	staticHandler := http.StripPrefix("/static/", http.FileServer(http.Dir("public/static")))
+	r.PathPrefix("/static/").Handler(staticHandler)
 
 	log.Fatal(http.ListenAndServe(":"+port, r))
 	fmt.Println("Listening to port: " + port)
