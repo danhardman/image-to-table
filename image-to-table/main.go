@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"image/color"
 	"image/jpeg"
 	"os"
 	"path/filepath"
@@ -64,7 +65,7 @@ func main() {
 	}
 
 	for y := 0; y < ic.Height; y++ {
-		rs := []byte("<tr style=\"height:1px;\">")
+		rs := []byte("<tr style=\"height:1px;padding:0;\">")
 		_, err = output.Write(rs)
 		if err != nil {
 			panic(err)
@@ -72,10 +73,9 @@ func main() {
 
 		for x := 0; x < ic.Width; x++ {
 			color := image.At(x, y)
-			r, g, b, _ := color.RGBA()
-			hex := RGBToHex(r, g, b)
+			hex := ColorToHex(color)
 
-			cell := []byte("<td style=\"width:1px;height:1px;background-color:" + hex + "\"></td>")
+			cell := []byte("<td style=\"width:1px;height:1px;padding:0;background-color:" + hex + "\"></td>")
 			_, err = output.Write(cell)
 			if err != nil {
 				panic(err)
@@ -97,6 +97,13 @@ func main() {
 }
 
 //RGBToHex converts RGB values to a hex string
-func RGBToHex(r, g, b uint32) string {
-	return fmt.Sprintf("#%02X%02X%02X", r, g, b)[:7]
+func rgbToHex(r, g, b uint8) string {
+	return fmt.Sprintf("#%02X%02X%02X", r, g, b)
+}
+
+//ColorToHex takes a color struct and returns the hexidecimal representation
+//of its RGB color value
+func ColorToHex(c color.Color) string {
+	r, g, b, _ := c.RGBA()
+	return rgbToHex(uint8(r>>8), uint8(g>>8), uint8(b>>8))
 }
