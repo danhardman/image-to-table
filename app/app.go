@@ -3,11 +3,14 @@ package app
 import (
 	"bytes"
 	"fmt"
+	"image"
 	"image/color"
+	"image/gif"
 	"image/jpeg"
+	"image/png"
+	"mime"
 	"mime/multipart"
-
-	"github.com/danhardman/image-to-table/utils"
+	"strings"
 )
 
 //Table describes a table
@@ -17,27 +20,106 @@ type Table struct {
 	Rows   string
 }
 
-//ImageToTable takes an image file and returns a table struct
-func ImageToTable(f multipart.File) *Table {
-	ic, err := jpeg.DecodeConfig(f)
-	utils.PanicOnError(err)
+//Image is a wrapper for an image and image config
+type Image struct {
+	Config image.Config
+	Image  image.Image
+}
 
-	t := &Table{
-		Width:  ic.Width,
-		Height: ic.Width,
+func getFileType(fh *multipart.FileHeader) string {
+	s := strings.Split(fh.Filename, ".")
+	ext := "." + s[len(s)-1]
+	mimetype := mime.TypeByExtension(ext)
+
+	if mimetype == fh.Header["Content-Type"][0] {
+		return mimetype
 	}
 
-	_, err = f.Seek(0, 0)
-	utils.PanicOnError(err)
+	return "Unknown"
+}
 
-	image, err := jpeg.Decode(f)
-	utils.PanicOnError(err)
+func getImage(f multipart.File, ft string) (*Image, error) {
+	switch ft {
+	case "image/jpeg":
+		return decodeJPEG(f)
+	case "image/gif":
+		return decodeGIF(f)
+	case "image/png":
+		return decodePNG(f)
+	}
+
+	return nil, fmt.Errorf("Invalid file type.")
+}
+
+func decodeJPEG(f multipart.File) (*Image, error) {
+	var image Image
+
+	ic, err := jpeg.DecodeConfig(f)
+	_, err = f.Seek(0, 0)
+	i, err := jpeg.Decode(f)
+
+	if err != nil {
+		return nil, fmt.Errorf("Could not decode JPEG file.")
+	}
+
+	image.Config = ic
+	image.Image = i
+
+	return &image, nil
+}
+
+func decodeGIF(f multipart.File) (*Image, error) {
+	var image Image
+
+	ic, err := gif.DecodeConfig(f)
+	_, err = f.Seek(0, 0)
+	i, err := gif.Decode(f)
+
+	if err != nil {
+		return nil, fmt.Errorf("Could not decode GIF file.")
+	}
+
+	image.Config = ic
+	image.Image = i
+
+	return &image, nil
+}
+
+func decodePNG(f multipart.File) (*Image, error) {
+	var image Image
+
+	ic, err := png.DecodeConfig(f)
+	_, err = f.Seek(0, 0)
+	i, err := png.Decode(f)
+
+	if err != nil {
+		return nil, fmt.Errorf("Could not decode PNG file.")
+	}
+
+	image.Config = ic
+	image.Image = i
+
+	return &image, nil
+}
+
+//ImageToTable takes an image file and returns a table struct
+func ImageToTable(f multipart.File, fh *multipart.FileHeader) (*Table, error) {
+	ft := getFileType(fh)
+	image, err := getImage(f, ft)
+	if err != nil {
+		return nil, err
+	}
+
+	t := &Table{
+		Width:  image.Config.Width,
+		Height: image.Config.Height,
+	}
 
 	var buffer bytes.Buffer
-	for y := 0; y < ic.Height; y++ {
+	for y := 0; y < t.Height; y++ {
 		buffer.WriteString("<tr>")
-		for x := 0; x < ic.Width; x++ {
-			color := image.At(x, y)
+		for x := 0; x < t.Width; x++ {
+			color := image.Image.At(x, y)
 			hex := ColorToHex(color)
 
 			buffer.WriteString("<td style=\"background-color:" + hex + "\"></td>")
@@ -47,7 +129,7 @@ func ImageToTable(f multipart.File) *Table {
 
 	t.Rows = buffer.String()
 
-	return t
+	return t, nil
 }
 
 //RGBToHex converts RGB values to a hex string
