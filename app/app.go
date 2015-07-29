@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"image"
-	"image/color"
 	"image/gif"
 	"image/jpeg"
 	"image/png"
@@ -120,9 +119,12 @@ func ImageToTable(f multipart.File, fh *multipart.FileHeader) (*Table, error) {
 		buffer.WriteString("<tr>")
 		for x := 0; x < t.Width; x++ {
 			color := image.Image.At(x, y)
-			hex := ColorToHex(color)
+			r, g, b, a := color.RGBA()
+			hex := ColorToHex(r, g, b)
 
-			buffer.WriteString("<td style=\"background-color:" + hex + "\"></td>")
+			opacity := fmt.Sprint(float64(a) / 65535)
+
+			buffer.WriteString("<td style=\"background-color:" + hex + ";opacity:" + opacity + "\"></td>")
 		}
 		buffer.WriteString("</tr>")
 	}
@@ -139,7 +141,6 @@ func rgbToHex(r, g, b uint8) string {
 
 //ColorToHex takes a color struct and returns the hexidecimal representation
 //of its RGB color value
-func ColorToHex(c color.Color) string {
-	r, g, b, _ := c.RGBA()
+func ColorToHex(r, g, b uint32) string {
 	return rgbToHex(uint8(r>>8), uint8(g>>8), uint8(b>>8))
 }
